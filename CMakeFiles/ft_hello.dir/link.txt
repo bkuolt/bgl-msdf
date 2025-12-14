@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/ft_hello.dir/main.cpp.o -o ft_hello  /usr/lib/x86_64-linux-gnu/libfreetype.so 

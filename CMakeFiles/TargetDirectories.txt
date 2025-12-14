@@ -1,0 +1,3 @@
+/home/bastian/Desktop/bgl-cl/CMakeFiles/ft_hello.dir
+/home/bastian/Desktop/bgl-cl/CMakeFiles/edit_cache.dir
+/home/bastian/Desktop/bgl-cl/CMakeFiles/rebuild_cache.dir
