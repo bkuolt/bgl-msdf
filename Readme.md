@@ -1,3 +1,6 @@
+# Pipeline
+`libconfig` → `Harfbuzz` → `Freetype` → `OpenCL` →`libpng`
+
 
 # Calculate SDF
 1) Find font with `libfontconfig`
