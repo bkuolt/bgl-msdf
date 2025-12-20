@@ -1,7 +1,8 @@
 
 #include <hb.h>
 #include <hb-ft.h>
-
+#include <spdlog/spdlog.h>
+#include <fmt/core.h>
 #include <string>
 
 // void shape()

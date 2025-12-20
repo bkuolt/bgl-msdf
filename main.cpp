@@ -57,9 +57,12 @@ FT_Face LoadFace(FT_Library ft, const char *fontPath, int size = 64)
 
 int Render(FT_Face face, std::string_view utf8Text);
 char *fontconfig_find_font_file(const char *query);
+int RunOpenCL();
 
 int main(int argc, char **argv)
 {
+    RunOpenCL();
+
     const char *font_path = (argc >= 2) ? argv[1] : "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf";
     const char *text = (argc >= 3) ? argv[2] : "Hello, BGL!";
 

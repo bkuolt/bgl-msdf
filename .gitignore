@@ -3,3 +3,9 @@ Makefile
 CMakeCache.txt
 cmake_install.cmake
 .vscode/
+
+
+*.o
+.ninja_log
+.ninja_deps
+compile_commands.json
