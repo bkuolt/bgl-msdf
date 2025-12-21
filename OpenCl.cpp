@@ -10,79 +10,44 @@
 
 #include <spdlog/spdlog.h>
 #include <numeric>
+#include <filesystem>
+#include <fstream>
+
+#include "Device.hpp"
+#include "ImageLoader.hpp"
+#include "Program.hpp"
 
 
 
 
 int RunOpenCL() {
 
-
-  
-
-    auto device =cl::Device::getDefault();
-
-    cl::Platform platform = device.getInfo<CL_DEVICE_PLATFORM>();
-
-
-    std::string pName  = platform.getInfo<CL_PLATFORM_NAME>();
-    std::string pVer   = platform.getInfo<CL_PLATFORM_VERSION>();
-    // TODO print more info
-
-
-
-    std::string pVendor = platform.getInfo<CL_PLATFORM_VENDOR>();
-    std::string pProfile = platform.getInfo<CL_PLATFORM_PROFILE>();
-    std::string pExtensions = platform.getInfo<CL_PLATFORM_EXTENSIONS>();
-
-
-
-    spdlog::info("Platform: {} ({})", pName, pVer);
-    spdlog::info(" Vendor: {}", pVendor);
-    spdlog::info(" Profile: {}", pProfile);
-    spdlog::info(" Extensions: {}", pExtensions);
-
-
-
-
+    auto device { cl::Device::getDefault() };
+    cl::Platform platform { device.getInfo<CL_DEVICE_PLATFORM>() };
+    PrintPlatformInfo(platform);
 
     // 2) Context + Queue
     cl::Context context(device);
     cl::CommandQueue queue(context, device);
 
-    // 3) Programm bauen
-
-    const char* kKernelSrc = R"(
-        __kernel void vadd(
-            __global const float* a,
-            __global const float* b,
-            __global float* out)
-        {
-            int gid = get_global_id(0);
-            out[gid] = a[gid] + b[gid];
-        }
-    )";
-    cl::Program program(context, cl::Program::Sources{
-        {kKernelSrc, std::strlen(kKernelSrc)}
-    });
-
-    try {
-        program.build({device});
+   // 3) Programm bauen
+    Program programBuilder(context);
+    cl::Program program = programBuilder.build(device, "/home/bastian/Desktop/bgl-cl/vadd.cl");
 
 
-        cl::Kernel kernel(program, "vadd");
+    try { 
+        cl::Kernel kernel = programBuilder.getKernel("vadd");
 
+   
         // 4) Daten vorbereiten
         constexpr int N = 1024;
         std::vector<float> a(N), b(N), out(N, 0.0f);
-
         std::iota(a.begin(), a.end(), 0.0f);      // 0..N-1
         std::iota(b.begin(), b.end(), 1000.0f);   // 1000..1000+N-1
 
         // 5) Buffers + Upload
-        cl::Buffer bufA(context, CL_MEM_READ_ONLY  | CL_MEM_COPY_HOST_PTR,
-                        sizeof(float) * N, a.data());
-        cl::Buffer bufB(context, CL_MEM_READ_ONLY  | CL_MEM_COPY_HOST_PTR,
-                        sizeof(float) * N, b.data());
+        cl::Buffer bufA(context, CL_MEM_READ_ONLY  | CL_MEM_COPY_HOST_PTR,sizeof(float) * N, a.data());
+        cl::Buffer bufB(context, CL_MEM_READ_ONLY  | CL_MEM_COPY_HOST_PTR,sizeof(float) * N, b.data());
         cl::Buffer bufOut(context, CL_MEM_WRITE_ONLY, sizeof(float) * N);
 
         // 6) Kernel Args + Dispatch
@@ -127,21 +92,7 @@ int RunOpenCL() {
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
     return 0;
-
-
 
 
 
