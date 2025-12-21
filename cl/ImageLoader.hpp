@@ -4,7 +4,10 @@
 #include <vector>
 
 #include <CL/opencl.hpp>
+
+#ifdef USE_PNG 
 #include <png++/png.hpp>
+#endif
 
 #include <spdlog/spdlog.h>
 #include <filesystem>
@@ -16,6 +19,7 @@ struct Image {
   size_t height;
 
   Image (const std::filesystem::path &path) {
+#ifdef USE_PNG 
       png::image<png::rgba_pixel> png(path.string());
 
       width = png.get_width();
@@ -34,7 +38,9 @@ struct Image {
           }
       }
 
-
+#else 
+      throw std::runtime_error("PNG support not enabled. Rebuild with USE_PNG defined.");
+#endif  
     }
 };
 
