@@ -1,17 +1,9 @@
 
-
-
-
-#include <vector>
-#include <format>
-
-
 #include <CL/opencl.hpp>
 
 #include <spdlog/spdlog.h>
+#include <vector>
 #include <numeric>
-#include <filesystem>
-#include <fstream>
 
 #include "Device.hpp"
 #include "ImageLoader.hpp"
@@ -19,26 +11,22 @@
 
 
 
-
 int RunOpenCL() {
 
-    auto device { cl::Device::getDefault() };
-    cl::Platform platform { device.getInfo<CL_DEVICE_PLATFORM>() };
-    PrintPlatformInfo(platform);
+    auto device { GetOpenCLDevice() };
 
     // 2) Context + Queue
     cl::Context context(device);
     cl::CommandQueue queue(context, device);
 
+
    // 3) Programm bauen
     Program programBuilder(context);
     cl::Program program = programBuilder.build(device, "/home/bastian/Desktop/bgl-cl/vadd.cl");
 
-
     try { 
         cl::Kernel kernel = programBuilder.getKernel("vadd");
 
-   
         // 4) Daten vorbereiten
         constexpr int N = 1024;
         std::vector<float> a(N), b(N), out(N, 0.0f);
@@ -64,8 +52,6 @@ int RunOpenCL() {
         queue.finish();
 
 
-
-
         // 7) Download + Check
         queue.enqueueReadBuffer(bufOut, CL_TRUE, 0, sizeof(float) * N, out.data());
 
@@ -74,9 +60,9 @@ int RunOpenCL() {
         for (int i = 0; i < N; ++i) {
             float ref = a[i] + b[i];
             if (out[i] != ref) { ok = false; break; }
-        spdlog::info("{}", (ok ? "OK" : "Mismatch"));
-        spdlog::info("{}", (ok ? "OK" : "Mismatch"));
-        spdlog::info("out[0]={}, out[10]={}", out[0], out[10]);    
+      //  spdlog::info("{}", (ok ? "OK" : "Mismatch"));
+      //  spdlog::info("{}", (ok ? "OK" : "Mismatch"));
+      //  spdlog::info("out[0]={}, out[10]={}", out[0], out[10]);    
 
         }
 
@@ -93,7 +79,4 @@ int RunOpenCL() {
 
 
     return 0;
-
-
-
 }
