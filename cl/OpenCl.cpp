@@ -2,7 +2,6 @@
 
 #include <spdlog/spdlog.h>
 #include <vector>
-#include <numeric>
 
 #include "Device.hpp"
 #include "ImageLoader.hpp"
@@ -29,11 +28,10 @@ cl::Buffer make_buffer(cl::Context& context, std::vector<T> data ) {
   return cl::Buffer(context, CL_MEM_READ_WRITE  | CL_MEM_COPY_HOST_PTR, sizeof(T) * data.size(), data.data());
 }
 
-
-
-int RunOpenCL() {
-    const std::filesystem::path kernelPath {"/home/bastian/Desktop/bgl-cl/cl/vadd.cl"};
-    const std::filesystem::path imagePath {"/home/bastian/Desktop/bgl-cl/heightmap.png"};
+int RunOpenCL(int argc, char **argv) {
+    const auto assetsDir = std::filesystem::path(argv[0]).parent_path() / "assets";
+    const std::filesystem::path kernelPath {assetsDir / "vadd.cl"};
+    const std::filesystem::path imagePath {assetsDir / "heightmap.png"};
 
     // setup OpenCL
     auto device { GetOpenCLDevice() };

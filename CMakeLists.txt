@@ -5,24 +5,19 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 
-
-find_package(OpenCL REQUIRED)
-
-find_package(Freetype REQUIRED)
 find_package(spdlog REQUIRED)
 
-find_package(PNG REQUIRED)
+add_executable(ft_hello main.cpp)
+add_subdirectory("cl")
+add_subdirectory("font")
 
-#find_package(CLI11 CONFIG REQUIRED)
-
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(FONTCONFIG REQUIRED IMPORTED_TARGET fontconfig)
-pkg_check_modules(HARFBUZZ REQUIRED IMPORTED_TARGET harfbuzz)
-
-
-add_executable(ft_hello main.cpp font/font.cpp cl/OpenCl.cpp)
-target_link_libraries(ft_hello PRIVATE Freetype::Freetype spdlog::spdlog 
+target_link_libraries(ft_hello PRIVATE 
+    libcl libfont
+    spdlog::spdlog 
+)
 
 
-PkgConfig::FONTCONFIG PkgConfig::HARFBUZZ OpenCL::OpenCL PNG::PNG) 
-
+add_custom_command(TARGET ft_hello POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_SOURCE_DIR}/assets $<TARGET_FILE_DIR:ft_hello>/assets
+)

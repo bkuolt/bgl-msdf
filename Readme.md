@@ -2,6 +2,21 @@
 # Install
 `task conan:install`
 
+- Taskfile
+- Conan config
+- CMake config
+- CI config
+
+## Arm64 crossbuild
+conan install . -of build-arm64 \
+  -pr:b=default \
+  -pr:h=profiles/linux-arm64-gcc13 \
+  -pr:h=local-toolchain \
+  --build=missing
+
+conan build . -bf build-arm64
+
+
 # Pipeline
 `libconfig` → `Harfbuzz` → `Freetype` → `OpenCL` →`libpng`
 

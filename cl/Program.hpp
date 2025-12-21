@@ -18,13 +18,14 @@ public:
     
     const cl::Program::Sources sources{loadSource(path)};
     _program = cl::Program(_context, sources);
-    _program.build({device});
+    const auto status { _program.build({device}) };
 
-    // Build-Log ausgeben
-    spdlog::error("Build log:\n{}\n", _program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device));
-
+    if (status != CL_SUCCESS) {
+        spdlog::error("Build log:\n{}\n", _program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device));
+        throw std::runtime_error("could not build OpenCL program");
+    }
+      
     spdlog::info("OpenCL Program built successfully.");
-
     // TODO: cache binary
     return _program;
   }
@@ -52,8 +53,7 @@ private:
   cl::Program::Sources loadSource(const std::filesystem::path &path) {
     std::ifstream file(path);
     if (!file.is_open()) {
-      throw std::runtime_error("Failed to open kernel source file: " +
-                               path.string());
+      throw std::runtime_error("Failed to open kernel source file: " + path.string());
     }
 
     const std::string source{std::string(std::istreambuf_iterator<char>(file),

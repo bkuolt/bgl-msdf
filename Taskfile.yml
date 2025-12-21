@@ -1,10 +1,12 @@
 version: "3"
 
+# coann home env ->
+dotenv: [".env"]
 vars:
   PROJECT: ft_hello
   BUILD_DIR: build
   INSTALL_DIR: .install
-  GENERATOR: Ninja
+  GENERATOR: "Unix Makefiles"
 
   # Conan
   CONAN_PROFILE_HOST: default
@@ -38,21 +40,17 @@ tasks:
       - >
         conan install .
         -of "{{.CONAN_OUTPUT}}"
-        --profile:host "{{.CONAN_PROFILE_HOST}}"
-        --profile:build "{{.CONAN_PROFILE_BUILD}}"
+        -pr:h=./profiles/default
+        -pr:b="{{.CONAN_PROFILE_BUILD}}"
         -s build_type="{{.CONAN_BUILD_TYPE}}"
         --build=missing
+
 
   conan:lock:create:
     desc: Create lockfile (reproducible deps)
     cmds:
       - conan lock create . -s build_type="{{.CONAN_BUILD_TYPE}}"
 
-#  conan:cache:clean:
-#    desc: Clean Conan cache (DANGEROUS: wipes local binaries)
-#    prompt: This will remove your local Conan cache. Continue?
-#    cmds:
-#      - conan remove "*" -c
 
   # ----------------------------
   # Configure / Build
@@ -67,6 +65,7 @@ tasks:
         --preset "{{.CMAKE_PRESET}}"
         -S .
         -B "{{.BUILD_DIR}}/{{.CONAN_BUILD_TYPE}}"
+        -G "{{.GENERATOR}}" 
 
   build:
     desc: Build
@@ -98,27 +97,6 @@ tasks:
     cmds:
       - "{{.BUILD_DIR}}/{{.CONAN_BUILD_TYPE}}/{{.PROJECT}}"
 
-  # ----------------------------
-  # Tests
-  # ----------------------------
-  test:
-    desc: Run tests (ctest)
-    deps: [build]
-    cmds:
-      - >
-        {{.CT}}
-        --test-dir "{{.BUILD_DIR}}/{{.CONAN_BUILD_TYPE}}"
-        --output-on-failure
-
-  test:rerun-failed:
-    desc: Re-run only failed tests
-    deps: [build]
-    cmds:
-      - >
-        {{.CT}}
-        --test-dir "{{.BUILD_DIR}}/{{.CONAN_BUILD_TYPE}}"
-        --output-on-failure
-        --rerun-failed
 
   # ----------------------------
   # Code Quality (optional)
@@ -151,15 +129,3 @@ tasks:
       - rm -rf "{{.BUILD_DIR}}/{{.CONAN_BUILD_TYPE}}"
       - rm -rf "{{.CONAN_OUTPUT}}"
 
-  # ----------------------------
-  # Docker (optional scaffold)
-  # ----------------------------
-  docker:build:
-    desc: Build Docker image (if you have a Dockerfile)
-    cmds:
-      - docker build -t "{{.PROJECT}}:dev" .
-
-  docker:run:
-    desc: Run Docker image interactively
-    cmds:
-      - docker run --rm -it "{{.PROJECT}}:dev" bash
