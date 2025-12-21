@@ -49,7 +49,6 @@ __kernel void calculate_geometry(
 
         if (coord.x >= width || coord.y >= height) {
             continue;
-        
         }
 
         float4 rgba = read_imagef(image, samp, (int2)(x, y));
@@ -57,7 +56,6 @@ __kernel void calculate_geometry(
 
         vertex[i].position = (float3)(coord.x / width, coord.y / height, z);
         vertex[i].texCoord = (float2)(coord.x / width, coord.y / height);
-
 
         int gid = get_global_id(0) * 4 + i;
         out[gid] = vertex[i];
