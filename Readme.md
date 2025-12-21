@@ -5,7 +5,17 @@
 - Taskfile
 - Conan config
 - CMake config
-- CI config
+  - 📦 4. Package Configs & Export Targets
+  - Depndency Management Internals
+  - Presets
+  -Toolchain files
+- CI 
+
+- Camke Details:
+  - CPackConfig.cmake
+  - Packaging-Konfig (generiert Installer/Archive)
+  - CPackSourceConfig.cmake
+
 
 ## Arm64 crossbuild
 conan install . -of build-arm64 \

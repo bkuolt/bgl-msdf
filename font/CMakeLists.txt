@@ -4,6 +4,12 @@ project(libfont LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+option(USE_FREETYPE "Enable FreeType support" ON)
+option(USE_FONTCONFIG "Enable Fontconfig support" ON)
+option(USE_HARFBUZZ "Enable HarfBuzz support" ON)
+
+
+
 find_package(spdlog REQUIRED)
 find_package(PNG REQUIRED)
 find_package(Freetype REQUIRED)
