@@ -14,6 +14,8 @@ public:
   Program(cl::Context &context) : _context(context) {}
 
   cl::Program build(cl::Device &device, const std::filesystem::path &path) {
+    spdlog::info("Building OpenCL Program from source: {}", path.string());
+    
     const cl::Program::Sources sources{loadSource(path)};
     _program = cl::Program(_context, sources);
     _program.build({device});

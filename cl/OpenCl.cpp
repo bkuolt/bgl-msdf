@@ -8,6 +8,15 @@
 #include "Device.hpp"
 #include "ImageLoader.hpp"
 #include "Program.hpp"
+#include <glm/glm.hpp>
+
+
+struct Vertex {
+    glm::vec3 position;
+    glm::vec3 normal;
+    glm::vec2 texCoord;
+};
+
 
 
 
@@ -24,32 +33,55 @@ int RunOpenCL() {
     Program programBuilder(context);
     cl::Program program = programBuilder.build(device, "/home/bastian/Desktop/bgl-cl/vadd.cl");
 
+
     try { 
         cl::Kernel kernel = programBuilder.getKernel("vadd");
 
+        cl::Image2D image = LoadImage(context, "/home/bastian/Desktop/bgl-cl/heightmap.png");
+        auto width = image.getImageInfo<CL_IMAGE_WIDTH>();
+        auto height = image.getImageInfo<CL_IMAGE_HEIGHT>();
+        spdlog::info("uploaded cl::Image2D ({}x{})", width, height);
+
+
+
+
+
+
         // 4) Daten vorbereiten
-        constexpr int N = 1024;
+        const auto numTriangles { width * height * 2 };
+        const size_t numVertices { numTriangles * 3 };
+
+
+
+        const size_t N = numVertices * 3 *4; // x,y,z pro Vertex
         std::vector<float> a(N), b(N), out(N, 0.0f);
-        std::iota(a.begin(), a.end(), 0.0f);      // 0..N-1
-        std::iota(b.begin(), b.end(), 1000.0f);   // 1000..1000+N-1
 
         // 5) Buffers + Upload
-        cl::Buffer bufA(context, CL_MEM_READ_ONLY  | CL_MEM_COPY_HOST_PTR,sizeof(float) * N, a.data());
-        cl::Buffer bufB(context, CL_MEM_READ_ONLY  | CL_MEM_COPY_HOST_PTR,sizeof(float) * N, b.data());
-        cl::Buffer bufOut(context, CL_MEM_WRITE_ONLY, sizeof(float) * N);
+        cl::Buffer bufA(context, CL_MEM_READ_WRITE  | CL_MEM_COPY_HOST_PTR,sizeof(float) * N, a.data());
+        cl::Buffer bufB(context, CL_MEM_READ_WRITE  | CL_MEM_COPY_HOST_PTR,sizeof(float) * N, b.data());
+        cl::Buffer bufOut(context, CL_MEM_READ_WRITE, sizeof(Vertex) * N);
+        spdlog::info("uploaded buffers ({} MB)", (sizeof(float) * N * 3) / (1024 * 1024));
+
+
+        spdlog::info("vertices: {}, triangles: {}", numVertices, numTriangles);
+
 
         // 6) Kernel Args + Dispatch
         kernel.setArg(0, bufA);
-        kernel.setArg(1, bufB);
+        kernel.setArg(1, bufB); 
         kernel.setArg(2, bufOut);
 
+        kernel.setArg(3, image);
+
+        spdlog::info("kernel dispatched");
         queue.enqueueNDRangeKernel(
             kernel,
             cl::NullRange,
-            cl::NDRange(N),
+            cl::NDRange(width, height),
             cl::NullRange
         );
         queue.finish();
+        spdlog::info("Done");
 
 
         // 7) Download + Check

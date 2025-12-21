@@ -56,7 +56,6 @@ char *fontconfig_find_font_file(const char *query);
 int RunOpenCL();
 
 int RunFreetype(int argc, char **argv) {
-  RunOpenCL();
 
   const char *font_path =
       (argc >= 2) ? argv[1] : "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf";
