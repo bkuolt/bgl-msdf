@@ -18,6 +18,7 @@ class MyProjectConan(ConanFile):
         "glm/1.0.1",
         "tinygltf/2.9.0",
         "sdl/3.2.20",
+        "cli11/2.6.0",
         "libgettext/0.22"
         
     )

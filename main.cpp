@@ -1,14 +1,16 @@
 #include <future>
 #include <spdlog/spdlog.h>
 
+#include "cl/Program.hpp"
+
 int RunOpenCL();
 int RunFreetype(int argc, char **argv);
 
 
-
 int main(int argc, char **argv)
 {
-    
+    ProgramCache sha;
+
     try {
         auto task1 = std::async(std::launch::async, RunFreetype, argc, argv);
         auto task2 = std::async(std::launch::async, RunOpenCL);
