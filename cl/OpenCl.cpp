@@ -54,7 +54,6 @@ int RunOpenCL() {
         spdlog::info("uploaded cl::Image2D ({}x{})", width, height);
 
 
-
         // 4) Prepare Data
         const auto numTriangles { width * height * 2 };
         const size_t numVertices { numTriangles * 3 };
