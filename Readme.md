@@ -1,3 +1,7 @@
+
+# Install
+`task conan:install`
+
 # Pipeline
 `libconfig` → `Harfbuzz` → `Freetype` → `OpenCL` →`libpng`
 

@@ -18,11 +18,14 @@ struct Image {
   Image (const std::filesystem::path &path) {
       png::image<png::rgba_pixel> png(path.string());
 
-      const auto pixelCount {png.get_width() * png.get_height() * 4};
+      width = png.get_width();
+      height = png.get_height();
+
+      const auto pixelCount {width * height * 4};
       pixels.resize(pixelCount);
 
-      for (size_t y = 0, i = 0; y < png.get_height(); ++y) {
-          for (size_t x = 0; x < png.get_width(); ++x) {
+      for (size_t y = 0, i = 0; y < height; ++y) {
+          for (size_t x = 0; x < width; ++x) {
               const auto& pixel = png[y][x];
               pixels[i++] = pixel.red;
               pixels[i++] = pixel.green;
@@ -30,18 +33,23 @@ struct Image {
               pixels[i++] = pixel.alpha;
           }
       }
+
+
     }
 };
 
 
 cl::Image2D LoadImage(cl::Context &context, const std::filesystem::path &path) {
-  const Image image(path);
+  const Image png(path);
   const cl::ImageFormat imageFormat(CL_RGBA, CL_UNORM_INT8);
-  return cl::Image2D(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+  cl::Image2D image(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
                     imageFormat,
-                    image.width, image.height,
+                    png.width, png.height,
                     0, 
-                    (void*)image.pixels.data());
+                    (void*)png.pixels.data());
+
+  spdlog::info("Loaded image '{}' ({}x{})", path.string(), png.width, png.height);
+  return image;
 }
 
 #endif // IMAGELOADER_HPP
