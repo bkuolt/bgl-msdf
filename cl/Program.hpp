@@ -26,7 +26,9 @@ public:
     }
       
     spdlog::info("OpenCL Program built successfully.");
+
     // TODO: cache binary
+    saveBinary();
     return _program;
   }
 
@@ -63,9 +65,9 @@ private:
 
 
   void saveBinary() {
-#if 0
+#if 1
     // 1) Wie groß ist das Binary?
-    auto sizes = program.getInfo<CL_PROGRAM_BINARY_SIZES>();
+    auto sizes = _program.getInfo<CL_PROGRAM_BINARY_SIZES>();
     if (sizes.empty() || sizes[0] == 0) {
         throw std::runtime_error("No program binary available.");
     }
@@ -73,12 +75,14 @@ private:
     // 2) Speicher allokieren & Binary holen
     std::vector<unsigned char> bin(sizes[0]);
     std::vector<unsigned char*> ptrs{ bin.data() };
-    program.getInfo(CL_PROGRAM_BINARIES, &ptrs);
+    _program.getInfo(CL_PROGRAM_BINARIES, &ptrs);
 
     // 3) Schreiben
+    std::filesystem::path outFile{"/tmp/kernel.bin"};
     std::ofstream f(outFile, std::ios::binary);
     if (!f) throw std::runtime_error("Failed to write: " + outFile.string());
     f.write(reinterpret_cast<const char*>(bin.data()), (std::streamsize)bin.size());
+    spdlog::info("Saved program binary to '{}'", outFile.string());
 #endif
   }
 

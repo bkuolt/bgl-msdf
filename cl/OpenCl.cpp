@@ -32,6 +32,7 @@ int RunOpenCL(int argc, char **argv) {
     const auto assetsDir = std::filesystem::path(argv[0]).parent_path() / "assets";
     const std::filesystem::path kernelPath {assetsDir / "vadd.cl"};
     const std::filesystem::path imagePath {assetsDir / "heightmap.png"};
+    // TODO: check files
 
     // setup OpenCL
     auto device { GetOpenCLDevice() };
@@ -85,15 +86,12 @@ int RunOpenCL(int argc, char **argv) {
             cl::NullRange
         );
 
-
         spdlog::info("Waiting to finish...");
         queue.finish();
         spdlog::info("Done");
 
-
-        // 7) Download + Check
+        // 7) Download
         queue.enqueueReadBuffer(vertices, CL_TRUE, 0, sizeof(float) * N, out.data());
-
     }
     catch (const std::exception& e) {
             spdlog::error("Exception: {}", e.what());

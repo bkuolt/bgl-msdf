@@ -82,7 +82,7 @@ static void put_pixel_u8(unsigned char *img, int w, int h, int x, int y,
 static void blend_glyph_bitmap(unsigned char *img, int w, int h,
                                const FT_Bitmap *bm, int x0, int y0);
 
-static glm::ivec2 RenderGlyphByIndex(FT_Face face, FT_UInt glyphIndex,
+ glm::ivec2 RenderGlyphByIndex(FT_Face face, FT_UInt glyphIndex,
                                      const glm::ivec2 &pen, uint8_t *img, int W,
                                      int H) {
   if (FT_Load_Glyph(face, glyphIndex, FT_LOAD_DEFAULT)) {
