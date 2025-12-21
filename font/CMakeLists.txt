@@ -9,7 +9,6 @@ option(USE_FONTCONFIG "Enable Fontconfig support" ON)
 option(USE_HARFBUZZ "Enable HarfBuzz support" ON)
 
 
-
 find_package(spdlog REQUIRED)
 find_package(PNG REQUIRED)
 find_package(Freetype REQUIRED)
