@@ -19,6 +19,10 @@ public:
     const cl::Program::Sources sources{loadSource(path)};
     _program = cl::Program(_context, sources);
     _program.build({device});
+
+    // Build-Log ausgeben
+    spdlog::error("Build log:\n{}\n", _program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device));
+
     spdlog::info("OpenCL Program built successfully.");
 
     // TODO: cache binary
@@ -85,6 +89,12 @@ private:
 
 class ProgramCache {
     // TODO: implement cache mechanism
+public:
+    ProgramCache() {
+      auto home = std::getenv("HOME"); // just to set a breakpoint here
+      spdlog::info("HOME={}", home ? home : "not set");
+
+    }
 };
 
 #endif // PROGRAM_HPP

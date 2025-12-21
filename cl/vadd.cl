@@ -1,8 +1,7 @@
 __constant sampler_t samp =
-    CLK_NORMALIZED_COORDS_TRUE |
+    CLK_NORMALIZED_COORDS_FALSE |
     CLK_ADDRESS_CLAMP |
-    CLK_FILTER_LINEAR;
-
+    CLK_FILTER_NEAREST;
 
 
 struct Vertex {
@@ -21,12 +20,11 @@ uint get_vertex_id(uint width, int2 coord) {
 }
 
 
-
-kernel void vadd(
-    global const float* a,
-    global const float* b,
-    global struct Vertex* out,
-    image2d_t image)
+__kernel void calculate_geometry(
+    __global const float* a,
+    __global const float* b,
+    __global struct Vertex* out,
+    read_only image2d_t image)
 {
 
     const uint width = get_image_width(image);
@@ -53,7 +51,9 @@ kernel void vadd(
             continue;
         
         }
-        const float z = read_imageui(image, samp, coord).z / 255.0f;
+
+        float4 rgba = read_imagef(image, samp, (int2)(x, y));
+        float z = rgba.x;
 
         vertex[i].position = (float3)(coord.x / width, coord.y / height, z);
         vertex[i].texCoord = (float2)(coord.x / width, coord.y / height);
