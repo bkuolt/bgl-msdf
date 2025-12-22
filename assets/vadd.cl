@@ -1,3 +1,10 @@
+#include "AABB.h"
+
+// TODO: clean up header files
+// TODO: add header files
+// TODO: separate C++ source and headers properly
+// TODO: finish frustum culling kernel
+
 __constant sampler_t samp =
     CLK_NORMALIZED_COORDS_FALSE |
     CLK_ADDRESS_CLAMP |

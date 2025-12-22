@@ -18,7 +18,10 @@ public:
     
     const cl::Program::Sources sources{loadSource(path)};
     _program = cl::Program(_context, sources);
-    const auto status { _program.build({device}) };
+
+    const auto includePath = path.parent_path().string();
+    const std::string options = "-cl-std=CL2.0 -I" + includePath; // TODO: make configurable
+    const auto status { _program.build({device}, options.c_str()) };
 
     if (status != CL_SUCCESS) {
         spdlog::error("Build log:\n{}\n", _program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device));
