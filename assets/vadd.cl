@@ -19,7 +19,9 @@ uint get_vertex_id(uint width, int2 coord) {
     return coord.x + coord.y * width;
 }
 
-
+// TODO: 
+// input: heightmap
+// output: vbo
 __kernel void calculate_geometry(
     __global const float* a,
     __global const float* b,
