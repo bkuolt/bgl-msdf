@@ -17,7 +17,10 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(FONTCONFIG REQUIRED IMPORTED_TARGET fontconfig)
 pkg_check_modules(HARFBUZZ REQUIRED IMPORTED_TARGET harfbuzz)
 
-add_library(libfont font.cpp render.cpp)
+add_library(libfont
+text.cpp render.cpp shaping.cpp config.cpp
+)
+
 target_link_libraries(libfont PRIVATE 
     spdlog::spdlog 
     Freetype::Freetype 
