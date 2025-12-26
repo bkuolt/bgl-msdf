@@ -5,10 +5,9 @@
 #include <format>
 #include <spdlog/spdlog.h>
 
-static bool hasExtension(const cl::Device& dev, const std::string& ext)
-{
-    std::string exts = dev.getInfo<CL_DEVICE_EXTENSIONS>();
-    return exts.find(ext) != std::string::npos;
+static bool hasExtension(const cl::Device &dev, const std::string &ext) {
+  std::string exts = dev.getInfo<CL_DEVICE_EXTENSIONS>();
+  return exts.find(ext) != std::string::npos;
 }
 
 void printDeviceInfo(const cl::Device &device) {
@@ -43,15 +42,16 @@ void PrintPlatformInfo(const cl::Platform &platform) {
 } //
 
 cl::Device GetOpenCLDevice() {
-    auto device { cl::Device::getDefault() };
-    cl::Platform platform { device.getInfo<CL_DEVICE_PLATFORM>() };
-    PrintPlatformInfo(platform);
+  auto device{cl::Device::getDefault()};
+  cl::Platform platform{device.getInfo<CL_DEVICE_PLATFORM>()};
+  PrintPlatformInfo(platform);
 
-     if (!hasExtension(device, "cl_khr_il_program")) {
-        throw std::runtime_error("Device does not support cl_khr_il_program (SPIR-V IL).");
-    }
+  if (!hasExtension(device, "cl_khr_il_program")) {
+    throw std::runtime_error(
+        "Device does not support cl_khr_il_program (SPIR-V IL).");
+  }
 
-    return device;
+  return device;
 }
 
-#endif  // DEVICE_HPP-
+#endif // DEVICE_HPP-

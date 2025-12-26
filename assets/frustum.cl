@@ -135,3 +135,6 @@ __kernel void create_index_buffer(
         }
     }
 }
+
+//     __constant const Frustum* frustum,   // <- constant!
+

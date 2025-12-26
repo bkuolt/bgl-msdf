@@ -5,55 +5,20 @@
 #include FT_TRUETYPE_TABLES_H
 #include FT_SFNT_NAMES_H
 
-#include <exception>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <glm/glm.hpp>
-
-// fontconfig_find_font_file.c
-#include <fontconfig/fontconfig.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include <hb-ft.h>
 #include <hb.h>
 
 #include "Font.hpp"
+#include "details.hpp"
 
+#include <glm/glm.hpp>
 #include <spdlog/spdlog.h>
 
-FT_Library Initialize() {
-  FT_Library ft;
-  if (FT_Init_FreeType(&ft)) {
-    throw std::runtime_error("FT_Init_FreeType failed");
-  }
-  return ft;
-}
+#include <exception>
+#include <filesystem>
 
-FT_Face LoadFace(FT_Library ft, const char *fontPath, int size = 64) {
-  FT_Face face;
-
-  if (FT_New_Face(ft, fontPath, 0, &face)) {
-    throw new std::runtime_error(
-        std::format("FT_New_Face failed (font: {})", fontPath));
-  }
-
-  // Set font size in pixels
-  if (FT_Set_Pixel_Sizes(face, 0, size)) {
-    FT_Done_Face(face);
-    throw std::runtime_error("FT_Set_Pixel_Sizes failed");
-  }
-
-  spdlog::info("Loaded {}", fontPath);
-  return face;
-}
-
-int Render(FT_Face face, std::string_view utf8Text);
-char *fontconfig_find_font_file(const char *query);
-int RunOpenCL();
+std::vector<uint8_t> Render(FT_Face face, std::string_view utf8Text,
+                            const glm::uvec2 &size);
 
 int RunFreetype(int argc, char **argv) {
 
@@ -61,14 +26,21 @@ int RunFreetype(int argc, char **argv) {
       (argc >= 2) ? argv[1] : "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf";
   const char *text = (argc >= 3) ? argv[2] : "Hello, BGL!";
 
-  // Arial:style=Italic:pixelsize=32
-  char *fpp = fontconfig_find_font_file("sans:weight=bold");
-  spdlog::info("-->{}", fpp);
+  const auto directory = std::filesystem::path(argv[0]).parent_path();
+  const std::filesystem::path path = directory / "out.pgm";
 
-  FT_Library ft = Initialize();
-  FT_Face face = LoadFace(ft, font_path);
+  char *fpp = details::fontconfig_find_font_file("sans:weight=bold");
+  spdlog::info("found font file: {}", fpp);
 
-  Render(face, text);
+  FT_Library ft = details::Initialize();
+  FT_Face face = details::LoadFace(ft, font_path);
+
+  const glm::uvec2 size{800, 200};
+  auto image = Render(face, text, size);
+
+  if (!details::save_pgm(path.string().c_str(), image.data(), size)) {
+    return 2;
+  }
 
   FT_Done_Face(face);
   FT_Done_FreeType(ft);
@@ -76,44 +48,13 @@ int RunFreetype(int argc, char **argv) {
 }
 
 // -------------------------------------------------------------------------------------
-static int save_pgm(const char *path, const unsigned char *img, int w, int h);
-static void put_pixel_u8(unsigned char *img, int w, int h, int x, int y,
-                         unsigned char v);
-static void blend_glyph_bitmap(unsigned char *img, int w, int h,
-                               const FT_Bitmap *bm, int x0, int y0);
+glm::ivec2 RenderGlyphByIndex(FT_Face face, FT_UInt glyphIndex,
+                              const glm::ivec2 &pen, uint8_t *img,
+                              const glm::uvec2 &size);
 
- glm::ivec2 RenderGlyphByIndex(FT_Face face, FT_UInt glyphIndex,
-                                     const glm::ivec2 &pen, uint8_t *img, int W,
-                                     int H) {
-  if (FT_Load_Glyph(face, glyphIndex, FT_LOAD_DEFAULT)) {
-    throw std::runtime_error(
-        std::format("FT_Load_Glyph failed (glyphIndex={})", glyphIndex));
-  }
-
-  if (FT_Render_Glyph(face->glyph, FT_RENDER_MODE_NORMAL)) {
-    throw std::runtime_error("FT_Render_Glyph failed");
-  }
-
-  FT_GlyphSlot g = face->glyph;
-
-  const int x0 = pen.x + g->bitmap_left;
-  const int y0 = pen.y - g->bitmap_top;
-  // spdlog::info("placed glypth at ({},{})", x0, y0);
-
-  if (g->bitmap.pixel_mode == FT_PIXEL_MODE_GRAY) {
-    // WICHTIG: blend_glyph_bitmap MUSS clippen (x0/y0 und bitmap bounds)
-    blend_glyph_bitmap(img, W, H, &g->bitmap, x0, y0);
-  } else {
-    throw std::runtime_error(
-        std::format("Unsupported pixel mode {}", (int)g->bitmap.pixel_mode));
-  }
-
-  return {(int)(g->advance.x >> 6), (int)(g->advance.y >> 6)};
-}
-
-int Render(FT_Face face, std::string_view utf8Text) {
-  const int W = 800, H = 200;
-  std::vector<uint8_t> img((size_t)W * H, 0); // RAII, kein leak
+std::vector<uint8_t> Render(FT_Face face, std::string_view utf8Text,
+                            const glm::uvec2 &size) {
+  std::vector<uint8_t> img((size_t)size.x * size.y, 0); // RAII, kein leak
 
   glm::ivec2 pen{50, 120};
 
@@ -145,24 +86,17 @@ int Render(FT_Face face, std::string_view utf8Text) {
     }
 
     // Optional: early out wenn wir rechts raus sind
-    if (pen.x >= W)
+    if (pen.x >= (int)size.x)
       break;
 
-    pen += RenderGlyphByIndex(face, glyph, pen, img.data(), W, H);
+    pen += RenderGlyphByIndex(face, glyph, pen, img.data(), size);
     prevGlyph = glyph;
   }
 
-  if (!save_pgm("out.pgm", img.data(), W, H))
-    return 2;
-  return 0;
+  return img;
 }
 
-static void put_pixel_u8(unsigned char *img, int w, int h, int x, int y,
-                         unsigned char v) {
-  if (x < 0 || y < 0 || x >= w || y >= h)
-    return;
-  img[y * w + x] = v;
-}
+// -------------------------------------------------------------------------------------
 
 // Blend a FreeType 8-bit coverage bitmap onto an 8-bit grayscale image (white
 // text on black).
@@ -189,105 +123,31 @@ static void blend_glyph_bitmap(unsigned char *img, int w, int h,
   }
 }
 
-static int save_pgm(const char *path, const unsigned char *img, int w, int h) {
-  FILE *f = fopen(path, "wb");
-  if (!f)
-    return 0;
-  fprintf(f, "P5\n%d %d\n255\n", w, h);
-  fwrite(img, 1, (size_t)(w * h), f);
-  fclose(f);
-  return 1;
-}
-
-// Returns a malloc()'d UTF-8 path to the matched font file, or NULL on failure.
-// Caller must free() the returned string.
-char *fontconfig_find_font_file(const char *query) {
-  if (!query)
-    return NULL;
-
-  // Initialize fontconfig (safe to call multiple times; returns FcFalse on
-  // error).
-  if (!FcInit()) {
-    return NULL;
+glm::ivec2 RenderGlyphByIndex(FT_Face face, FT_UInt glyphIndex,
+                              const glm::ivec2 &pen, uint8_t *img,
+                              const glm::uvec2 &size) {
+  if (FT_Load_Glyph(face, glyphIndex, FT_LOAD_DEFAULT)) {
+    throw std::runtime_error(
+        std::format("FT_Load_Glyph failed (glyphIndex={})", glyphIndex));
   }
 
-  FcPattern *pat = FcNameParse((const FcChar8 *)query);
-  if (!pat)
-    return NULL;
-
-  // Apply config substitutions (aliases, defaults, etc.)
-  FcConfigSubstitute(NULL, pat, FcMatchPattern);
-  FcDefaultSubstitute(pat);
-
-  FcResult result = FcResultNoMatch;
-  FcPattern *match = FcFontMatch(NULL, pat, &result);
-
-  FcChar8 *file = NULL;
-  char *out = NULL;
-
-  if (match && FcPatternGetString(match, FC_FILE, 0, &file) == FcResultMatch &&
-      file) {
-    // Copy to a normal malloc() buffer so caller can free() easily.
-    size_t n = strlen((const char *)file);
-    out = (char *)malloc(n + 1);
-    if (out) {
-      memcpy(out, (const char *)file, n + 1);
-    }
+  if (FT_Render_Glyph(face->glyph, FT_RENDER_MODE_NORMAL)) {
+    throw std::runtime_error("FT_Render_Glyph failed");
   }
 
-  if (match)
-    FcPatternDestroy(match);
-  FcPatternDestroy(pat);
+  FT_GlyphSlot g = face->glyph;
 
-  return out;
+  const int x0 = pen.x + g->bitmap_left;
+  const int y0 = pen.y - g->bitmap_top;
+  // spdlog::info("placed glypth at ({},{})", x0, y0);
+
+  if (g->bitmap.pixel_mode == FT_PIXEL_MODE_GRAY) {
+    // WICHTIG: blend_glyph_bitmap MUSS clippen (x0/y0 und bitmap bounds)
+    blend_glyph_bitmap(img, size.x, size.y, &g->bitmap, x0, y0);
+  } else {
+    throw std::runtime_error(
+        std::format("Unsupported pixel mode {}", (int)g->bitmap.pixel_mode));
+  }
+
+  return {(int)(g->advance.x >> 6), (int)(g->advance.y >> 6)};
 }
-
-#if 0
-#include <hb-ft.h>
-#include <hb.h>
-
-int RenderHB(FT_Face face, std::string_view utf8Text)
-{
-    const int W = 800, H = 200;
-    std::vector<uint8_t> img((size_t)W * H, 0);
-    glm::ivec2 pen{50, 120};
-
-    hb_font_t* hb_font = hb_ft_font_create_referenced(face);
-    hb_buffer_t* buf = hb_buffer_create();
-
-    hb_buffer_add_utf8(buf, utf8Text.data(), (int)utf8Text.size(), 0, (int)utf8Text.size());
-
-    // Auto: erkennt Script/Direction oft selbst; für safety könntest du setzen:
-    hb_buffer_guess_segment_properties(buf);
-
-    // Shaping: macht aus Text -> Glyph IDs + Positioning
-    hb_shape(hb_font, buf, nullptr, 0);
-
-    unsigned int count = 0;
-    hb_glyph_info_t* infos = hb_buffer_get_glyph_infos(buf, &count);
-    hb_glyph_position_t* pos = hb_buffer_get_glyph_positions(buf, &count);
-
-    // HarfBuzz arbeitet in 26.6 fixed point (wie FreeType advances)
-    for (unsigned i = 0; i < count; ++i) {
-        const FT_UInt glyphIndex = infos[i].codepoint; // das ist jetzt die Glyph-ID!
-        const int x_off = pos[i].x_offset >> 6;
-        const int y_off = pos[i].y_offset >> 6;
-
-        glm::ivec2 drawPen = pen + glm::ivec2{x_off, -y_off}; // y-Achse beachten (Baseline)
-        pen += RenderGlyphByIndex(face, glyphIndex, drawPen, img.data(), W, H);
-
-        // advance NICHT aus FreeType nehmen, sondern aus HarfBuzz!
-        pen.x += (pos[i].x_advance >> 6);
-        pen.y -= (pos[i].y_advance >> 6);
-
-        if (pen.x >= W) break;
-    }
-
-    hb_buffer_destroy(buf);
-    hb_font_destroy(hb_font);
-
-    if (!save_pgm("out.pgm", img.data(), W, H)) return 2;
-    return 0;
-}
-
-#endif
