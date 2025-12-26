@@ -4,7 +4,7 @@
 #include <vector>
 
 #include "Device.hpp"
-#include "ImageLoader.hpp"
+#include "Image.hpp"
 #include "Program.hpp"
 #include <glm/glm.hpp>
 
