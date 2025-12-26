@@ -15,7 +15,7 @@ int main(int argc, char **argv) {
   ProgramCache sha;
 
   try {
-    const char *text = (argc >= 3) ? argv[2] : "Hello, BGL!";
+    const char *text = (argc >= 3) ? argv[2] : "Hello beautiful, BGL!";
     const auto path = std::filesystem::path(argv[0]).parent_path() / "out.pgm";
 
     auto task1 = std::async(std::launch::async, RunFreetype, path, text);

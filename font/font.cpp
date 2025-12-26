@@ -72,7 +72,7 @@ std::string find_font(const std::string &query) {
         std::format("could not find font for query '{}'", query));
   }
 
-  spdlog::info("found font file: {}", font_path);
+  spdlog::info("found font file: {}", path);
   return std::string(path);
 }
 
@@ -118,9 +118,10 @@ void RunFreetype(const std::filesystem::path &imagePath,
     face = LoadFace(ft, font_path);
     spdlog::info("initialize FreeType");
 
-    const glm::uvec2 size{800, 200};
-    const auto image{Render(face, text, size)};
-    save_pgm(imagePath, image, size);
+    GlyphRun run = CreateGlyphRun(face, text);
+    const auto image{Render(face, run)};
+
+    save_pgm(imagePath, image, run.size);
     spdlog::info("rendered text to image");
 
   } catch (const std::exception &e) {
