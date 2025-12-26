@@ -2,7 +2,7 @@
 #include <spdlog/spdlog.h>
 
 #include "cl/Program.hpp"
-#include "font/font.hpp"
+#include "font/text.hpp"
 
 int RunOpenCL(int argc, char **argv);
 

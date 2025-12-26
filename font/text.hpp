@@ -3,6 +3,7 @@
 
 #include <filesystem>
 #include <string_view>
+#include <glm/vec2.hpp>
 
 void RunFreetype(const std::filesystem::path &imagePath, std::string_view text);
 
@@ -11,11 +12,19 @@ class Font {};
 class FontFace {};
 
 class Bitmap {};
-class GlyphCache {};
+
+class GlyphCache {
+  struct key_type {
+    FontFace face;
+    uint size;
+    uint32_t codepoint;
+  };
+};
 
 class Glyph {
   Bitmap bitmap;
-  int size;
+  glm::ivec2 bearing; 
+  glm::ivec2 advance;
 };
 
 class TextRenderer {
@@ -27,7 +36,7 @@ public:
 
 private:
   Glyph renderGlyph(FontFace face, int size, uint32_t codepoint);
-  void cacheGlyph(Glyph glyph, uint32_t codepoint);
+  void cacheGlyph(Glyph glyph, uint size, uint32_t codepoint);
 
   GlyphCache glyphCache;
 };
